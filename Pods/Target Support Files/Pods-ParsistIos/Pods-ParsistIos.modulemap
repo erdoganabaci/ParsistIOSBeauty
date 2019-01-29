@@ -1,0 +1,6 @@
+framework module Pods_ParsistIos {
+  umbrella header "Pods-ParsistIos-umbrella.h"
+
+  export *
+  module * { export * }
+}
