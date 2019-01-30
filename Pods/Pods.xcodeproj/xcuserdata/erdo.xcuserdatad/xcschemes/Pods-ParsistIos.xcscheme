@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "433E3127C462FE7447A1F7B7D546B31C"
+               BlueprintIdentifier = "BDF06A571FDBBB252E41DF37F6C04A6F"
                BuildableName = "Pods_ParsistIos.framework"
                BlueprintName = "Pods-ParsistIos"
                ReferencedContainer = "container:Pods.xcodeproj">
@@ -45,7 +45,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "433E3127C462FE7447A1F7B7D546B31C"
+            BlueprintIdentifier = "BDF06A571FDBBB252E41DF37F6C04A6F"
             BuildableName = "Pods_ParsistIos.framework"
             BlueprintName = "Pods-ParsistIos"
             ReferencedContainer = "container:Pods.xcodeproj">

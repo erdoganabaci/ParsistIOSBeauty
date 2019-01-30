@@ -23,6 +23,7 @@ class detailsVC: UIViewController , MKMapViewDelegate , CLLocationManagerDelegat
     @IBOutlet weak var placeImage: UIImageView!
     @IBOutlet weak var mapView: MKMapView!
     
+     var poiCoodinates: CLLocationCoordinate2D = CLLocationCoordinate2D()
      var nameArray = [String]()
      var typeArray = [String]()
      var atmosphereArray = [String]()
@@ -43,7 +44,7 @@ class detailsVC: UIViewController , MKMapViewDelegate , CLLocationManagerDelegat
     }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         //locasyon update edildiğinde  kullanıcıya focus atması için
-        let location = CLLocationCoordinate2D(latitude: locations[0].coordinate.latitude, longitude: locations[0].coordinate.longitude)
+        let location = CLLocationCoordinate2D(latitude: poiCoodinates.latitude, longitude: poiCoodinates.longitude)
         let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
         let region = MKCoordinateRegion(center: location, span: span)
         mapView.setRegion(region, animated: true)
@@ -127,13 +128,13 @@ class detailsVC: UIViewController , MKMapViewDelegate , CLLocationManagerDelegat
                
                 print(self.selectedPlace)
                 
-                var poiCoodinates: CLLocationCoordinate2D = CLLocationCoordinate2D()
                 
-                poiCoodinates.latitude = CDouble(values["latitute"] as! String)!
-                poiCoodinates.longitude = CDouble(values["longitute"] as! String )!
+                
+                self.poiCoodinates.latitude = CDouble(values["latitute"] as! String)!
+                self.poiCoodinates.longitude = CDouble(values["longitute"] as! String )!
                 //print("name \(name)")
                 // annotations.coordinate = CLLocationCoordinate2D(latitude: doubleLat as! Double, longitude: self.doubleLongitute as! Double)
-                let location = CLLocationCoordinate2D(latitude:poiCoodinates.latitude , longitude:poiCoodinates.longitude)
+                let location = CLLocationCoordinate2D(latitude:self.poiCoodinates.latitude , longitude:self.poiCoodinates.longitude)
                 let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
                 let region = MKCoordinateRegion(center: location, span: span)
                 self.mapView.setRegion(region, animated: true)

@@ -9,6 +9,8 @@ pod 'Firebase/Auth'
 pod 'Firebase/Database'
 pod 'Firebase/Storage'
 pod 'SDWebImage/WebP'
+pod 'FBAnnotationClusteringSwift'
+
   # Pods for ParsistIos
 
 end

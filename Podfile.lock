@@ -1,4 +1,5 @@
 PODS:
+  - FBAnnotationClusteringSwift (1.0.1)
   - Firebase/Auth (5.15.0):
     - Firebase/CoreOnly
     - FirebaseAuth (= 5.2.0)
@@ -103,6 +104,7 @@ PODS:
     - SDWebImage/Core
 
 DEPENDENCIES:
+  - FBAnnotationClusteringSwift
   - Firebase/Auth
   - Firebase/Core
   - Firebase/Database
@@ -111,6 +113,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
+    - FBAnnotationClusteringSwift
     - Firebase
     - FirebaseAnalytics
     - FirebaseAuth
@@ -128,6 +131,7 @@ SPEC REPOS:
     - SDWebImage
 
 SPEC CHECKSUMS:
+  FBAnnotationClusteringSwift: a1f4c07f5472b13acd69de04c61e68e2d7daaad3
   Firebase: 8bb9268bff82374f2cbaaabb143e725743c316ae
   FirebaseAnalytics: c06f9d70577d79074214700a71fd5d39de5550fb
   FirebaseAuth: 02e969ff430e156d99d4cb842d77b806b71ad7bb
@@ -144,6 +148,6 @@ SPEC CHECKSUMS:
   nanopb: 2901f78ea1b7b4015c860c2fdd1ea2fee1a18d48
   SDWebImage: c5594f1a19c48d526d321e548902b56b479cd508
 
-PODFILE CHECKSUM: a7f3cbae26600cf1344365cd673ef1f238190a46
+PODFILE CHECKSUM: e41930d90139ce22bc0b3991d4786f93e393072b
 
 COCOAPODS: 1.5.3

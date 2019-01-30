@@ -11,9 +11,14 @@ import MapKit
 import Firebase
 import FirebaseStorage
 import FirebaseDatabase
-class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate {
+import FBAnnotationClusteringSwift
+class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FBClusteringManagerDelegate{
+  
+    
     @IBOutlet weak var indicatorActivity: UIActivityIndicatorView!
     @IBOutlet weak var mapView: MKMapView!
+    let clusteringManager = FBClusteringManager()
+    let configuration = FBAnnotationClusterViewConfiguration.default()
     var manager = CLLocationManager()
     var requestCLlocation = CLLocation()
     var location = CLLocationCoordinate2D()
@@ -21,12 +26,14 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate {
     var chosenLongitute = [String]()
     var poiCoodinates: CLLocationCoordinate2D = CLLocationCoordinate2D()
     
+    var array:[FBAnnotation] = []
     var nameArray = [String]()
     var typeArray = [String]()
     var situationArray = [String]()
     var latituteArray = [String]()
     var longituteArray = [String]()
     var imageArray = [String]()
+    
     var doubleLatitute = [Double]()
     var doubleLongitute = [Double]()
     var resimUrl = ""
@@ -44,11 +51,15 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate {
         mapView.showsUserLocation = true
         //manager.startUpdatingLocation() //veriler yokken güncellemek mantıksız veriler olduğunda güncelle.
         //locasyon update durdurmayı unutma locationmanager çağrılınca iptal etsin güncellemeyi.
+       
+        clusteringManager.delegate = self
         createLocation()
       
        
     }
-  
+    func cellSizeFactor(forCoordinator coordinator: FBClusteringManager) -> CGFloat {
+        return 1.0
+    }
     func getDataFromFirebase(){
         //güvenli kod için fonksiyon her açıldığında içi boş array gelip doldurcak.
         self.nameArray.removeAll(keepingCapacity: false)
@@ -96,6 +107,7 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate {
             for id in locationID{
                 let singleLocation = values[id] as! NSDictionary
                 let annotations = MKPointAnnotation()
+                let FBPin = FBAnnotation()
                 let annotTitle = singleLocation["parkname"] as! String
                 self.resimUrl = singleLocation["downloadurl"] as! String
                 annotations.title = annotTitle
@@ -106,6 +118,9 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate {
                 //print("name \(name)")
                // annotations.coordinate = CLLocationCoordinate2D(latitude: doubleLat as! Double, longitude: self.doubleLongitute as! Double)
                 annotations.coordinate = CLLocationCoordinate2D(latitude:self.poiCoodinates.latitude , longitude:self.poiCoodinates.longitude)
+                FBPin.coordinate = CLLocationCoordinate2D(latitude:self.poiCoodinates.latitude , longitude:self.poiCoodinates.longitude)
+                self.array.append(FBPin)
+                self.clusteringManager.add(annotations: self.array)
                 self.mapView.addAnnotation(annotations)
             }
             
@@ -163,11 +178,24 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate {
             
             
             manager.stopUpdatingLocation()
-            
-            
-        
+  
     
     }
+    
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        let mapBoundsWidth = Double(self.mapView.bounds.size.width)
+        let mapVisibleRect = self.mapView.visibleMapRect
+        let scale = mapBoundsWidth / mapVisibleRect.size.width
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let strongSelf = self else { return }
+            let annotationArray = strongSelf.clusteringManager.clusteredAnnotations(withinMapRect: mapVisibleRect, zoomScale:scale)
+            DispatchQueue.main.async { [weak self] in
+                guard let strongSelf = self else { return }
+                strongSelf.clusteringManager.display(annotations: annotationArray, onMapView:strongSelf.mapView)
+            }
+        }
+    }
+    
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         var selectedAnnotation = view.annotation
         print("başlığı seçtim \(selectedAnnotation?.title)")
@@ -175,6 +203,18 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate {
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         //fonksiyonu override ediyruz ve harita pinlerini özelleştirebiliyoruz.
+        let reuseFBClusterID = "cluster"
+        if annotation is FBAnnotationCluster {
+            
+            var clusterView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseFBClusterID)
+            if clusterView == nil {
+                clusterView = FBAnnotationClusterView(annotation: annotation, reuseIdentifier: reuseFBClusterID, configuration: self.configuration)
+            } else {
+                clusterView?.annotation = annotation
+            }
+            
+            return clusterView
+        }
         if annotation is MKUserLocation { //lokasyonla ilgili anatasyonsa hiçbirşey yapma.
             return nil
         }
@@ -188,43 +228,44 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate {
             //let button1 = UIButton(type: .infoLight)
             ///pinView?.rightCalloutAccessoryView = button
             //pinView?.leftCalloutAccessoryView = button1
+            let databaseReference = Database.database().reference().child("Locations").child("post")
+            databaseReference.queryOrdered(byChild: "parkname").queryEqual(toValue: pinView?.annotation?.title as! String).observe(DataEventType.childAdded) { (snapshot) in
+                if snapshot.exists(){
+                    
+                    let values = snapshot.value! as! NSDictionary
+                    self.resimUrl =  values["downloadurl"] as! String
+                    print("filtreli resim:\(pinView?.annotation?.title) ---> \(self.resimUrl)")
+                    if let url = NSURL(string: self.resimUrl){
+                        if let data = NSData(contentsOf: url as! URL){
+                            // let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
+                            //let myImage = imageView.sd_setImage(with: URL(string: self.resimUrl as! String))
+                            //pinView?.detailCalloutAccessoryView = UIImageView(image: UIImage(data: data as! Data, scale: 50))
+                            // pinView?.detailCalloutAccessoryView = UIImageView(frame: CGRect()
+                            let width = 250
+                            let height = 250
+                            
+                            let snapshotView = UIView()
+                            let views = ["snapshotView": snapshotView]
+                            snapshotView.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[snapshotView(250)]", options: [], metrics: nil, views: views))
+                            snapshotView.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:[snapshotView(250)]", options: [], metrics: nil, views: views))
+                            let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+                            let myImage = imageView.sd_setImage(with: URL(string: self.resimUrl as! String))
+                            snapshotView.addSubview(imageView)
+                            pinView?.detailCalloutAccessoryView = snapshotView
+                        }
+                    }
+                }
+                self.indicatorActivity.isHidden = true
+                self.indicatorActivity.stopAnimating()
+                
+            }
+            
             
         }else{
             pinView?.annotation = annotation //böylece pinviewı customize ettik.
         }
         
-        let databaseReference = Database.database().reference().child("Locations").child("post")
-        databaseReference.queryOrdered(byChild: "parkname").queryEqual(toValue: pinView?.annotation?.title as! String).observe(DataEventType.childAdded) { (snapshot) in
-            if snapshot.exists(){
- 
-                let values = snapshot.value! as! NSDictionary
-                self.resimUrl =  values["downloadurl"] as! String
-                print("filtreli resim:\(pinView?.annotation?.title) ---> \(self.resimUrl)")
-                if let url = NSURL(string: self.resimUrl){
-                    if let data = NSData(contentsOf: url as! URL){
-                       // let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
-                        //let myImage = imageView.sd_setImage(with: URL(string: self.resimUrl as! String))
-                        //pinView?.detailCalloutAccessoryView = UIImageView(image: UIImage(data: data as! Data, scale: 50))
-                       // pinView?.detailCalloutAccessoryView = UIImageView(frame: CGRect()
-                        let width = 100
-                        let height = 100
-                        
-                        let snapshotView = UIView()
-                        let views = ["snapshotView": snapshotView]
-                        snapshotView.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[snapshotView(100)]", options: [], metrics: nil, views: views))
-                        snapshotView.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:[snapshotView(100)]", options: [], metrics: nil, views: views))
-                        let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-                        let myImage = imageView.sd_setImage(with: URL(string: self.resimUrl as! String))
-                        snapshotView.addSubview(imageView)
-                        pinView?.detailCalloutAccessoryView = snapshotView
-                    }
-                }
-            }
-            self.indicatorActivity.isHidden = true
-            self.indicatorActivity.stopAnimating()
-            
-        }
-        
+     
         print("pinview annot title \(pinView?.annotation?.title) )")
         
         
