@@ -27,16 +27,18 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
     var poiCoodinates: CLLocationCoordinate2D = CLLocationCoordinate2D()
     
     var array:[FBAnnotation] = []
+    var imageUrlWithparknameDictionary = [String:String]()
     var nameArray = [String]()
     var typeArray = [String]()
     var situationArray = [String]()
     var latituteArray = [String]()
     var longituteArray = [String]()
     var imageArray = [String]()
-    
+    var imageAnnotUrl = [String]()
     var doubleLatitute = [Double]()
     var doubleLongitute = [Double]()
     var resimUrl = ""
+    var chosenPlaceToDetail = ""
     override func viewDidLoad() {
         super.viewDidLoad()
         indicatorActivity.isHidden = false
@@ -53,7 +55,7 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
         //locasyon update durdurmayı unutma locationmanager çağrılınca iptal etsin güncellemeyi.
        
         clusteringManager.delegate = self
-        createLocation()
+    
       
        
     }
@@ -103,16 +105,17 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
             }
           
             //print("Lat datası \(self.latituteArray)")
-         
+            var count : Int = 0
             for id in locationID{
                 let singleLocation = values[id] as! NSDictionary
                 let annotations = MKPointAnnotation()
                 let FBPin = FBAnnotation()
                 let annotTitle = singleLocation["parkname"] as! String
-                self.resimUrl = singleLocation["downloadurl"] as! String
+                self.imageAnnotUrl.append(singleLocation["downloadurl"] as! String)
+                let imageUrlWithParkName = singleLocation["downloadurl"] as! String
                 annotations.title = annotTitle
                
-                
+            
                 self.poiCoodinates.latitude = CDouble(singleLocation["latitute"] as! String)!
                 self.poiCoodinates.longitude = CDouble(singleLocation["longitute"] as! String )!
                 //print("name \(name)")
@@ -120,10 +123,13 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
                 annotations.coordinate = CLLocationCoordinate2D(latitude:self.poiCoodinates.latitude , longitude:self.poiCoodinates.longitude)
                 FBPin.coordinate = CLLocationCoordinate2D(latitude:self.poiCoodinates.latitude , longitude:self.poiCoodinates.longitude)
                 self.array.append(FBPin)
-                self.clusteringManager.add(annotations: self.array)
+                //self.clusteringManager.add(annotations: self.array)
                 self.mapView.addAnnotation(annotations)
+                self.imageUrlWithparknameDictionary[annotTitle as! String] = imageUrlWithParkName as! String
+                count = count + 1
             }
-            
+             print("bir kere döndü \(count)")
+             print("my dict \(self.imageUrlWithparknameDictionary["ALSANCAK YERALTI(IZELMAN)"] as! String )")
             /*
             for name in self.nameArray{
                 let annotations = MKPointAnnotation()
@@ -145,11 +151,19 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
         }
       
     }
-    func createLocation(){
-     
+    
+    func resize(image: UIImage, size: CGSize) -> UIImage? {
         
+        let scale = size.width / image.size.width
+        let height = image.size.height * scale
+        UIGraphicsBeginImageContext(CGSize(width: size.width, height: height))
+        image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: height))
+        
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage
     }
- 
     
     func allMapAnnotation(){
         for doubleLat in self.doubleLatitute{
@@ -181,7 +195,7 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
   
     
     }
-    
+    /*
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         let mapBoundsWidth = Double(self.mapView.bounds.size.width)
         let mapVisibleRect = self.mapView.visibleMapRect
@@ -195,15 +209,18 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
             }
         }
     }
+    */
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         var selectedAnnotation = view.annotation
-        print("başlığı seçtim \(selectedAnnotation?.title)")
+        print("başlığı seçtim \(selectedAnnotation?.title as! String )")
+        chosenPlaceToDetail = selectedAnnotation?.title as! String
+     
     }
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         //fonksiyonu override ediyruz ve harita pinlerini özelleştirebiliyoruz.
-        let reuseFBClusterID = "cluster"
+      /*  let reuseFBClusterID = "cluster"
         if annotation is FBAnnotationCluster {
             
             var clusterView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseFBClusterID)
@@ -214,33 +231,64 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
             }
             
             return clusterView
-        }
+        }*/
         if annotation is MKUserLocation { //lokasyonla ilgili anatasyonsa hiçbirşey yapma.
             return nil
         }
         let reuseID = "pin"
         var pinView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseID)
         if pinView == nil {
+            var count1 = 0
+            count1 = count1 + 1
+            print("iki kere döndü \(count1)")
+            
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseID)
+            print("Annot title \(pinView?.annotation?.title)")
             pinView?.canShowCallout = true //yanına buton eklenebilir mi evet diyoruz
+            pinView?.tintColor = UIColor.green
             //pinView?.image = UIImage(named: "cat.png")
             ///let button = UIButton(type: .detailDisclosure)
             //let button1 = UIButton(type: .infoLight)
             ///pinView?.rightCalloutAccessoryView = button
             //pinView?.leftCalloutAccessoryView = button1
+           
+                print("Bu iş oldu hızlıca ")
+                
+                        let width = 300
+                        let height = 100
+                        
+                        let snapshotView = UIView()
+                        let views = ["snapshotView": snapshotView]
+                        snapshotView.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[snapshotView(100)]", options: [], metrics: nil, views: views))
+                        snapshotView.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:[snapshotView(100)]", options: [], metrics: nil, views: views))
+                        //let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+                        //let myImage = imageView.sd_setImage(with: URL(string: erdo as! String))
+                        //size düşür öyle yükle https://stackoverflow.com/questions/40694423/downloading-image-extremely-slow download image how to fast
+                        
+                        let button1 = UIButton(frame: CGRect(x: 0, y: height - 35, width: width / 2 - 5, height: 35))
+                        button1.setTitle("Detaylar", for: .normal)
+                        button1.backgroundColor = UIColor.darkGray
+                        button1.layer.cornerRadius = 5
+                        button1.layer.borderWidth = 1
+                        button1.layer.borderColor = UIColor.black.cgColor
+                        button1.addTarget(self, action: #selector(mapVC.annotationDetailCliked), for: .touchDown)
+                        
+                        snapshotView.addSubview(button1)
+                        //snapshotView.addSubview(imageView)
+                        pinView?.detailCalloutAccessoryView = snapshotView
+              
+            self.indicatorActivity.isHidden = true
+            self.indicatorActivity.stopAnimating()
+            /*
             let databaseReference = Database.database().reference().child("Locations").child("post")
             databaseReference.queryOrdered(byChild: "parkname").queryEqual(toValue: pinView?.annotation?.title as! String).observe(DataEventType.childAdded) { (snapshot) in
                 if snapshot.exists(){
-                    
+             
                     let values = snapshot.value! as! NSDictionary
                     self.resimUrl =  values["downloadurl"] as! String
                     print("filtreli resim:\(pinView?.annotation?.title) ---> \(self.resimUrl)")
                     if let url = NSURL(string: self.resimUrl){
                         if let data = NSData(contentsOf: url as! URL){
-                            // let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
-                            //let myImage = imageView.sd_setImage(with: URL(string: self.resimUrl as! String))
-                            //pinView?.detailCalloutAccessoryView = UIImageView(image: UIImage(data: data as! Data, scale: 50))
-                            // pinView?.detailCalloutAccessoryView = UIImageView(frame: CGRect()
                             let width = 250
                             let height = 250
                             
@@ -259,14 +307,14 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
                 self.indicatorActivity.stopAnimating()
                 
             }
-            
+            */
             
         }else{
             pinView?.annotation = annotation //böylece pinviewı customize ettik.
         }
         
      
-        print("pinview annot title \(pinView?.annotation?.title) )")
+       // print("pinview annot title \(pinView?.annotation?.title) )")
         
         
         //print("Benim image arraylerim : \(resimUrl)")
@@ -283,7 +331,9 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
         button.setImage(image, for: UIControl.State())
         pinView?.rightCalloutAccessoryView = button
         
-       
+        
+        
+        
         
         return pinView
     }
@@ -305,6 +355,19 @@ class mapVC: UIViewController,MKMapViewDelegate , CLLocationManagerDelegate , FB
             }
         
     }
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "frommapVCtodetailsVC" {
+            let destinationVC = segue.destination as! detailsVC
+            destinationVC.selectedPlace = self.chosenPlaceToDetail //mapVC deki annotatin title  ismi detailVC ye aktardık
+            
+        }
+    }
+    @objc func annotationDetailCliked(){
+    print("segue başarılı detaylara geçtiniz")
+        self.performSegue(withIdentifier: "frommapVCtodetailsVC", sender: nil)
+    
+    }
+    
     @IBAction func parkListClicked(_ sender: Any) {
         self.performSegue(withIdentifier: "frommapVCtoplacesVC", sender: nil)
     }
