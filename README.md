@@ -11,5 +11,5 @@ If we have financial support , we turn to auto park system which will use uber,t
 
 ![Gif](https://github.com/erdoganabaci/ParsistIOSBeauty/blob/master/ParsistIos/map%20gif.gif?raw=true)
 
-This is firebase integrate ios application
+This is firebase integrate ios application,also ıf you want to send notification,easliy you can firebase fcm and onesignal
 ![Last](https://github.com/erdoganabaci/ParsistIOSBeauty/blob/master/ParsistIos/4.png?raw=true)
